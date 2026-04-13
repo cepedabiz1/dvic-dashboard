@@ -256,9 +256,8 @@ body {
 }
 .offender-info .driver-name {
     font-size: 15px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-wrap: break-word;
 }
 .offender-info .driver-id {
     font-size: 10px;
@@ -514,13 +513,33 @@ body {
     color: var(--green);
 }
 
+@media (max-width: 640px) {
+    .offender-card {
+        flex-wrap: wrap;
+    }
+    .offender-info {
+        flex: 1 1 60%;
+        min-width: 120px;
+    }
+    .offender-info .driver-name {
+        font-size: 14px;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    .offender-stats {
+        width: 100%;
+        grid-template-columns: repeat(4, 1fr);
+        margin-top: 8px;
+    }
+    .coaching-btn-row {
+        flex-wrap: wrap;
+    }
+}
 @media (max-width: 400px) {
     .container { padding: 12px; }
     .header h1 { font-size: 19px; }
     .summary-card .big-num { font-size: 24px; }
-    .driver-name { font-size: 16px; }
-    .offender-card { flex-wrap: wrap; }
-    .offender-stats { width: 100%; grid-template-columns: repeat(4, 1fr); margin-top: 8px; }
+    .driver-name { font-size: 14px; }
     .wow-card { flex-wrap: wrap; gap: 12px; }
     .wow-divider { width: 50px; height: 1px; }
 }
@@ -1311,7 +1330,7 @@ body {
     </div>
 
     <div class="footer">
-        Generated April 13, 2026 at 05:07 PM<br>
+        Generated April 13, 2026 at 06:45 PM<br>
         Data: 2026-03-15 to 2026-04-12 &bull; 268 violations &bull; Threshold: 90s<br>
         DVIC Violations Dashboard v3.0
     </div>
@@ -1320,7 +1339,7 @@ body {
 
 <script>
 var DRIVERS = [{"id":"A1NXP6XCL0NIO2","name":"Ulises GuzmanJr","violations":2,"avgDur":55,"lastSeen":"2026-04-12"},{"id":"A2VGKF0M4H3GJ3","name":"Luis Izaguirre","violations":2,"avgDur":11,"lastSeen":"2026-04-08"},{"id":"A2H4UERAXP9BVI","name":"Juan Lainez Barzola","violations":2,"avgDur":69,"lastSeen":"2026-04-12"},{"id":"APW286PEXVS2W","name":"Aristy Saint Surinl","violations":2,"avgDur":50,"lastSeen":"2026-04-12"},{"id":"A192AS8MQS2PJH","name":"Carlos Echenique Rodriguez","violations":1,"avgDur":84,"lastSeen":"2026-04-11"},{"id":"A10VD8NGWNL7QU","name":"Kyle Greenwood","violations":1,"avgDur":10,"lastSeen":"2026-04-08"},{"id":"A10L735QB6FZ9N","name":"Edgar Reina Velepucha","violations":1,"avgDur":65,"lastSeen":"2026-04-12"},{"id":"A1PFYWMUYBMQ7X","name":"Daniel Silvadiaz","violations":1,"avgDur":73,"lastSeen":"2026-04-08"},{"id":"A1JU4CO2HXQ61Z","name":"Ericka Ortiz","violations":1,"avgDur":56,"lastSeen":"2026-04-10"},{"id":"A1GTE5P27KWYUW","name":"Oscar Frias Figueredo","violations":1,"avgDur":79,"lastSeen":"2026-04-06"},{"id":"A2B756A8IX91K9","name":"Miguel Valdes Martorell","violations":1,"avgDur":84,"lastSeen":"2026-04-07"},{"id":"A2J4QF102ECIQC","name":"Jeremy Subervi","violations":1,"avgDur":23,"lastSeen":"2026-04-09"},{"id":"A2TX0RIVDO0QF8","name":"Angie Quiroga sanchez","violations":1,"avgDur":86,"lastSeen":"2026-04-09"},{"id":"A31BPHW6KPT3B4","name":"Adderlyn Aguilar Flores","violations":1,"avgDur":89,"lastSeen":"2026-04-09"},{"id":"A1Y4VI7DEHADF3","name":"Carmen Rodriguez","violations":1,"avgDur":72,"lastSeen":"2026-04-06"},{"id":"A3EO0YFIPC41WD","name":"Fidel Mirandan","violations":1,"avgDur":87,"lastSeen":"2026-04-06"},{"id":"A3GWJLPPCJPEMN","name":"Albert Porrello","violations":1,"avgDur":65,"lastSeen":"2026-04-06"},{"id":"A3PEMM0GS2A66M","name":"Juan Diaz","violations":1,"avgDur":81,"lastSeen":"2026-04-06"},{"id":"A3L7CIVW8USIM","name":"Alexander Hernandez Lara","violations":1,"avgDur":75,"lastSeen":"2026-04-10"},{"id":"AD096COQYQX9K","name":"David Escobar","violations":1,"avgDur":49,"lastSeen":"2026-04-08"},{"id":"AESJ8WSPYFYZA","name":"Frank Lozano Monrroy","violations":1,"avgDur":71,"lastSeen":"2026-04-10"},{"id":"AI7YMV8FG3JW8","name":"Junior Zambrano","violations":1,"avgDur":68,"lastSeen":"2026-04-09"},{"id":"AMBU4Z42OG5DR","name":"Elys Montes","violations":1,"avgDur":62,"lastSeen":"2026-04-08"}];
-var API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+var API_URL = 'https://script.google.com/macros/s/AKfycbw_yYf4JP-fFgiqoLc3G9avAMNiij9YmkmtOXn9XDEF57e-3nhM2Pv-DQOivk16P88b/exec';
 var coachingStore = {};
 var isLoading = false;
 
