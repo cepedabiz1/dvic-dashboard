@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DVIC Violations Dashboard &mdash; DNJ4</title>
+<style>
+:root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3345;
+    --text: #e4e7f1;
+    --text-dim: #8b90a5;
+    --accent: #6c8cff;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #f87171;
+    --critical-bg: var(--surface);
+    --warning-bg: var(--surface);
+    --caution-bg: var(--surface);
+    --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+.container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.header {
+    text-align: center;
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+.header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+.header .subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+.header .station-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+    letter-spacing: 1px;
+}
+.header .note {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.summary-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+}
+.summary-card .big-num {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+.summary-card .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+.summary-card .sub-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+.rate-bad { color: var(--red); }
+.rate-ok { color: var(--yellow); }
+.rate-good { color: var(--green); }
+
+/* WoW comparison card */
+.wow-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 8px;
+}
+.wow-side {
+    text-align: center;
+    flex: 1;
+}
+.wow-side .wow-value {
+    font-size: 26px;
+    font-weight: 800;
+}
+.wow-side .wow-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wow-divider {
+    width: 1px;
+    height: 50px;
+    background: var(--border);
+}
+.wow-arrow {
+    font-size: 24px;
+    font-weight: 800;
+}
+.wow-change-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section {
+    margin-bottom: 28px;
+}
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.section-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+}
+.section-header .badge {
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.section-header .date-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: auto;
+}
+
+.driver-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--orange);
+}
+.driver-card.critical { border-left-color: var(--red); }
+.driver-card.warning { border-left-color: var(--yellow); }
+.driver-card.caution { border-left-color: var(--orange); }
+
+.driver-name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+.driver-id {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
+.driver-stats {
+    display: flex;
+    gap: 16px;
+}
+.stat {
+    display: flex;
+    flex-direction: column;
+}
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+}
+.stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.vin-full {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.offender-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 4px solid var(--orange);
+}
+.offender-card.critical { border-left-color: var(--red); }
+.offender-card.warning { border-left-color: var(--yellow); }
+.offender-card.caution { border-left-color: var(--orange); }
+
+.offender-rank {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-dim);
+    min-width: 36px;
+    text-align: center;
+}
+.offender-info {
+    flex: 1;
+    min-width: 0;
+}
+.offender-info .driver-name {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.offender-info .driver-id {
+    font-size: 10px;
+    margin-bottom: 0;
+}
+.offender-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px 12px;
+    text-align: center;
+}
+.offender-stats .stat-value { font-size: 14px; }
+.offender-stats .stat-label { font-size: 9px; }
+
+.trend-up { color: var(--red); }
+.trend-down { color: var(--green); }
+.trend-flat { color: var(--text-dim); }
+
+.chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 8px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.chart-container svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border);
+}
+
+.footer {
+    text-align: center;
+    padding: 20px 0;
+    font-size: 11px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+}
+
+/* Coaching tracker */
+.coaching-btn-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+.coach-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.coach-btn:active { transform: scale(0.96); }
+.coach-btn.coached {
+    background: rgba(52,211,153,0.15);
+    border-color: rgba(52,211,153,0.4);
+    color: var(--green);
+}
+.coach-btn.pending {
+    background: rgba(248,113,113,0.1);
+    border-color: rgba(248,113,113,0.3);
+    color: var(--red);
+}
+.coach-date {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+.coach-note {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    display: none;
+}
+.coach-note:focus { border-color: var(--accent); }
+.coach-note.visible { display: block; }
+
+/* Collapsible section */
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.collapse-arrow {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.collapse-arrow.open {
+    transform: rotate(90deg);
+}
+.collapsible-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease;
+}
+.collapsible-body.open {
+    max-height: 5000px;
+}
+
+/* Coaching summary section */
+.coaching-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.reset-btn {
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(248,113,113,0.3);
+    background: rgba(248,113,113,0.1);
+    color: var(--red);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+    -webkit-tap-highlight-color: transparent;
+}
+.coaching-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.coaching-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.coaching-progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+.coaching-progress-text {
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 60px;
+    text-align: right;
+}
+.coaching-filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.filter-btn {
+    padding: 5px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+.coaching-driver-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.coaching-driver-row:last-child { border-bottom: none; }
+.coaching-driver-info {
+    flex: 1;
+    min-width: 0;
+}
+.coaching-driver-info .driver-name {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.coaching-driver-info .driver-id {
+    font-size: 10px;
+    margin-bottom: 0;
+}
+.coaching-driver-info .coach-meta {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+.coaching-driver-viol {
+    text-align: center;
+    min-width: 40px;
+}
+.coaching-driver-viol .stat-value { font-size: 15px; }
+.coaching-mini-btn {
+    padding: 5px 10px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 70px;
+    text-align: center;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.coaching-mini-btn:active { transform: scale(0.96); }
+.coaching-mini-btn.coached {
+    background: rgba(52,211,153,0.15);
+    border-color: rgba(52,211,153,0.4);
+    color: var(--green);
+}
+
+@media (max-width: 400px) {
+    .container { padding: 12px; }
+    .header h1 { font-size: 19px; }
+    .summary-card .big-num { font-size: 24px; }
+    .driver-name { font-size: 16px; }
+    .offender-card { flex-wrap: wrap; }
+    .offender-stats { width: 100%; grid-template-columns: repeat(4, 1fr); margin-top: 8px; }
+    .wow-card { flex-wrap: wrap; gap: 12px; }
+    .wow-divider { width: 50px; height: 1px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>DVIC Violations</h1>
+        <div class="subtitle">Pre-Trip Inspection Dashboard</div>
+        <div class="station-badge">DNJ4 &mdash; SPRC</div>
+        <div class="note">This report only captures violations (&lt;90s). Compliant drivers do not appear.</div>
+    </div>
+
+    <!-- WoW Comparison -->
+    <div class="wow-card">
+        <div class="wow-side">
+            <div class="wow-value">83</div>
+            <div class="wow-label">Last Week Total</div>
+            <div class="wow-label" style="margin-top:2px;">W14</div>
+        </div>
+        <div class="wow-divider"></div>
+        <div class="wow-side">
+            <div class="wow-value">27</div>
+            <div class="wow-label">This Week Total</div>
+            <div class="wow-label" style="margin-top:2px;">W15</div>
+        </div>
+        <div class="wow-divider"></div>
+        <div class="wow-side">
+            <div class="wow-arrow rate-good">&#9660;</div>
+            <div class="wow-change-label rate-good">56 fewer</div>
+            <div class="wow-label" style="margin-top:2px;">-67%</div>
+        </div>
+    </div>
+
+    <!-- Daily Violations (last 14 days) -->
+    <div class="section" style="margin-bottom:20px;">
+        <div class="section-header">
+            <h2>Daily Violations</h2>
+            <span class="date-label">Last 14 days</span>
+        </div>
+        <div class="chart-container">
+            <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+<text x="35" y="169.0" fill="#8b90a5" font-size="10" text-anchor="end">0</text>
+<line x1="40" y1="165.0" x2="590" y2="165.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="35" y="141.0" fill="#8b90a5" font-size="10" text-anchor="end">4</text>
+<line x1="40" y1="137.0" x2="590" y2="137.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="35" y="113.0" fill="#8b90a5" font-size="10" text-anchor="end">8</text>
+<line x1="40" y1="109.0" x2="590" y2="109.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="35" y="85.0" fill="#8b90a5" font-size="10" text-anchor="end">12</text>
+<line x1="40" y1="81.0" x2="590" y2="81.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="35" y="57.0" fill="#8b90a5" font-size="10" text-anchor="end">16</text>
+<line x1="40" y1="53.0" x2="590" y2="53.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="35" y="29.0" fill="#8b90a5" font-size="10" text-anchor="end">20</text>
+<line x1="40" y1="25.0" x2="590" y2="25.0" stroke="#2e3345" stroke-width="0.5"/>
+<rect x="40.0" y="81.0" width="20" height="84.0" rx="3" fill="#fb923c" opacity="0.85"/>
+<text x="50.0" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 50.0 177)">03-30</text>
+<text x="50.0" y="77.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">12</text>
+<rect x="80.76923076923077" y="60.0" width="20" height="105.0" rx="3" fill="#f87171" opacity="0.85"/>
+<text x="90.76923076923077" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 90.76923076923077 177)">03-31</text>
+<text x="90.76923076923077" y="56.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">15</text>
+<rect x="121.53846153846155" y="74.0" width="20" height="91.0" rx="3" fill="#fb923c" opacity="0.85"/>
+<text x="131.53846153846155" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 131.53846153846155 177)">04-01</text>
+<text x="131.53846153846155" y="70.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">13</text>
+<rect x="162.30769230769232" y="74.0" width="20" height="91.0" rx="3" fill="#fb923c" opacity="0.85"/>
+<text x="172.30769230769232" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 172.30769230769232 177)">04-02</text>
+<text x="172.30769230769232" y="70.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">13</text>
+<rect x="203.0769230769231" y="88.0" width="20" height="77.0" rx="3" fill="#fb923c" opacity="0.85"/>
+<text x="213.0769230769231" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 213.0769230769231 177)">04-03</text>
+<text x="213.0769230769231" y="84.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">11</text>
+<rect x="243.84615384615387" y="102.0" width="20" height="63.0" rx="3" fill="#fbbf24" opacity="0.85"/>
+<text x="253.84615384615387" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 253.84615384615387 177)">04-04</text>
+<text x="253.84615384615387" y="98.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">9</text>
+<rect x="284.61538461538464" y="95.0" width="20" height="70.0" rx="3" fill="#fb923c" opacity="0.85"/>
+<text x="294.61538461538464" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 294.61538461538464 177)">04-05</text>
+<text x="294.61538461538464" y="91.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">10</text>
+<rect x="325.3846153846154" y="116.0" width="20" height="49.0" rx="3" fill="#fbbf24" opacity="0.85"/>
+<text x="335.3846153846154" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 335.3846153846154 177)">04-06</text>
+<text x="335.3846153846154" y="112.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">7</text>
+<rect x="366.1538461538462" y="158.0" width="20" height="7.0" rx="3" fill="#34d399" opacity="0.85"/>
+<text x="376.1538461538462" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 376.1538461538462 177)">04-07</text>
+<rect x="406.92307692307696" y="130.0" width="20" height="35.0" rx="3" fill="#fbbf24" opacity="0.85"/>
+<text x="416.92307692307696" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 416.92307692307696 177)">04-08</text>
+<text x="416.92307692307696" y="126.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">5</text>
+<rect x="447.69230769230774" y="130.0" width="20" height="35.0" rx="3" fill="#fbbf24" opacity="0.85"/>
+<text x="457.69230769230774" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 457.69230769230774 177)">04-09</text>
+<text x="457.69230769230774" y="126.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">5</text>
+<rect x="488.4615384615385" y="144.0" width="20" height="21.0" rx="3" fill="#34d399" opacity="0.85"/>
+<text x="498.4615384615385" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 498.4615384615385 177)">04-10</text>
+<text x="498.4615384615385" y="140.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">3</text>
+<rect x="529.2307692307693" y="151.0" width="20" height="14.0" rx="3" fill="#34d399" opacity="0.85"/>
+<text x="539.2307692307693" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 539.2307692307693 177)">04-11</text>
+<text x="539.2307692307693" y="147.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">2</text>
+<rect x="570.0" y="137.0" width="20" height="28.0" rx="3" fill="#34d399" opacity="0.85"/>
+<text x="580.0" y="177" fill="#8b90a5" font-size="9" text-anchor="end" transform="rotate(-45 580.0 177)">04-12</text>
+<text x="580.0" y="133.0" fill="#e4e7f1" font-size="9" text-anchor="middle" font-weight="700">4</text>
+</svg>
+        </div>
+    </div>
+
+    <!-- SECTION A: Latest Day Violations -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Latest Violations</h2>
+            <span class="badge">4</span>
+            <span class="date-label">Apr 12, 2026</span>
+        </div>
+        
+            <div class="driver-card warning" data-driver-id="APW286PEXVS2W">
+                <div class="driver-name">Aristy Saint Surinl</div>
+                <div class="driver-id">APW286PEXVS2W</div>
+                <div class="driver-stats">
+                    <div class="stat">
+                        <span class="stat-value">47s</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">43s</span>
+                        <span class="stat-label">Under Threshold</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">154150</span>
+                        <span class="stat-label">VIN (last 6)</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2026-04-12</span>
+                        <span class="stat-label">Date</span>
+                    </div>
+                </div>
+                <div class="vin-full">VIN: 3C6LRVDG4RE154150 &bull; CV</div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('APW286PEXVS2W','Aristy Saint Surinl')">
+                        <span class="coach-icon" id="icon-APW286PEXVS2W"></span>
+                        <span class="coach-text" id="text-APW286PEXVS2W"></span>
+                    </button>
+                    <span class="coach-date" id="date-APW286PEXVS2W"></span>
+                </div>
+            </div>
+            <div class="driver-card warning" data-driver-id="A1NXP6XCL0NIO2">
+                <div class="driver-name">Ulises GuzmanJr</div>
+                <div class="driver-id">A1NXP6XCL0NIO2</div>
+                <div class="driver-stats">
+                    <div class="stat">
+                        <span class="stat-value">50s</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">40s</span>
+                        <span class="stat-label">Under Threshold</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">556208</span>
+                        <span class="stat-label">VIN (last 6)</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2026-04-12</span>
+                        <span class="stat-label">Date</span>
+                    </div>
+                </div>
+                <div class="vin-full">VIN: 3C6MRVJG1ME556208 &bull; CV</div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1NXP6XCL0NIO2','Ulises GuzmanJr')">
+                        <span class="coach-icon" id="icon-A1NXP6XCL0NIO2"></span>
+                        <span class="coach-text" id="text-A1NXP6XCL0NIO2"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1NXP6XCL0NIO2"></span>
+                </div>
+            </div>
+            <div class="driver-card caution" data-driver-id="A2H4UERAXP9BVI">
+                <div class="driver-name">Juan Lainez Barzola</div>
+                <div class="driver-id">A2H4UERAXP9BVI</div>
+                <div class="driver-stats">
+                    <div class="stat">
+                        <span class="stat-value">62s</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">28s</span>
+                        <span class="stat-label">Under Threshold</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">034968</span>
+                        <span class="stat-label">VIN (last 6)</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2026-04-12</span>
+                        <span class="stat-label">Date</span>
+                    </div>
+                </div>
+                <div class="vin-full">VIN: 7FCEHEB24SN034968 &bull; EDV</div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2H4UERAXP9BVI','Juan Lainez Barzola')">
+                        <span class="coach-icon" id="icon-A2H4UERAXP9BVI"></span>
+                        <span class="coach-text" id="text-A2H4UERAXP9BVI"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2H4UERAXP9BVI"></span>
+                </div>
+            </div>
+            <div class="driver-card caution" data-driver-id="A10L735QB6FZ9N">
+                <div class="driver-name">Edgar Reina Velepucha</div>
+                <div class="driver-id">A10L735QB6FZ9N</div>
+                <div class="driver-stats">
+                    <div class="stat">
+                        <span class="stat-value">65s</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">25s</span>
+                        <span class="stat-label">Under Threshold</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">556833</span>
+                        <span class="stat-label">VIN (last 6)</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2026-04-12</span>
+                        <span class="stat-label">Date</span>
+                    </div>
+                </div>
+                <div class="vin-full">VIN: 3C6MRVJG2ME556833 &bull; CV</div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A10L735QB6FZ9N','Edgar Reina Velepucha')">
+                        <span class="coach-icon" id="icon-A10L735QB6FZ9N"></span>
+                        <span class="coach-text" id="text-A10L735QB6FZ9N"></span>
+                    </button>
+                    <span class="coach-date" id="date-A10L735QB6FZ9N"></span>
+                </div>
+            </div>
+    </div>
+
+    <!-- SECTION B: Top Offenders -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Top Repeat Offenders</h2>
+            <span class="badge">15</span>
+            <span class="date-label">Last 7 days: 2026-04-06 to 2026-04-12</span>
+        </div>
+        
+            <div class="offender-card warning" data-driver-id="A1NXP6XCL0NIO2">
+                <div class="offender-rank">#1</div>
+                <div class="offender-info">
+                    <div class="driver-name">Ulises GuzmanJr</div>
+                    <div class="driver-id">A1NXP6XCL0NIO2</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">55s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1NXP6XCL0NIO2','Ulises GuzmanJr')">
+                        <span class="coach-icon" id="icon-A1NXP6XCL0NIO2"></span>
+                        <span class="coach-text" id="text-A1NXP6XCL0NIO2"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1NXP6XCL0NIO2"></span>
+                </div>
+            </div>
+            <div class="offender-card critical" data-driver-id="A2VGKF0M4H3GJ3">
+                <div class="offender-rank">#2</div>
+                <div class="offender-info">
+                    <div class="driver-name">Luis Izaguirre</div>
+                    <div class="driver-id">A2VGKF0M4H3GJ3</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">11s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-flat">&#8212;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2VGKF0M4H3GJ3','Luis Izaguirre')">
+                        <span class="coach-icon" id="icon-A2VGKF0M4H3GJ3"></span>
+                        <span class="coach-text" id="text-A2VGKF0M4H3GJ3"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2VGKF0M4H3GJ3"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A2H4UERAXP9BVI">
+                <div class="offender-rank">#3</div>
+                <div class="offender-info">
+                    <div class="driver-name">Juan Lainez Barzola</div>
+                    <div class="driver-id">A2H4UERAXP9BVI</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">69s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2H4UERAXP9BVI','Juan Lainez Barzola')">
+                        <span class="coach-icon" id="icon-A2H4UERAXP9BVI"></span>
+                        <span class="coach-text" id="text-A2H4UERAXP9BVI"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2H4UERAXP9BVI"></span>
+                </div>
+            </div>
+            <div class="offender-card warning" data-driver-id="APW286PEXVS2W">
+                <div class="offender-rank">#4</div>
+                <div class="offender-info">
+                    <div class="driver-name">Aristy Saint Surinl</div>
+                    <div class="driver-id">APW286PEXVS2W</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">50s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-flat">&#8212;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('APW286PEXVS2W','Aristy Saint Surinl')">
+                        <span class="coach-icon" id="icon-APW286PEXVS2W"></span>
+                        <span class="coach-text" id="text-APW286PEXVS2W"></span>
+                    </button>
+                    <span class="coach-date" id="date-APW286PEXVS2W"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A192AS8MQS2PJH">
+                <div class="offender-rank">#5</div>
+                <div class="offender-info">
+                    <div class="driver-name">Carlos Echenique Rodriguez</div>
+                    <div class="driver-id">A192AS8MQS2PJH</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">84s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-flat">&#8212;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A192AS8MQS2PJH','Carlos Echenique Rodriguez')">
+                        <span class="coach-icon" id="icon-A192AS8MQS2PJH"></span>
+                        <span class="coach-text" id="text-A192AS8MQS2PJH"></span>
+                    </button>
+                    <span class="coach-date" id="date-A192AS8MQS2PJH"></span>
+                </div>
+            </div>
+            <div class="offender-card critical" data-driver-id="A10VD8NGWNL7QU">
+                <div class="offender-rank">#6</div>
+                <div class="offender-info">
+                    <div class="driver-name">Kyle Greenwood</div>
+                    <div class="driver-id">A10VD8NGWNL7QU</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">10s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-up">&#9650;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A10VD8NGWNL7QU','Kyle Greenwood')">
+                        <span class="coach-icon" id="icon-A10VD8NGWNL7QU"></span>
+                        <span class="coach-text" id="text-A10VD8NGWNL7QU"></span>
+                    </button>
+                    <span class="coach-date" id="date-A10VD8NGWNL7QU"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A10L735QB6FZ9N">
+                <div class="offender-rank">#7</div>
+                <div class="offender-info">
+                    <div class="driver-name">Edgar Reina Velepucha</div>
+                    <div class="driver-id">A10L735QB6FZ9N</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">65s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-up">&#9650;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A10L735QB6FZ9N','Edgar Reina Velepucha')">
+                        <span class="coach-icon" id="icon-A10L735QB6FZ9N"></span>
+                        <span class="coach-text" id="text-A10L735QB6FZ9N"></span>
+                    </button>
+                    <span class="coach-date" id="date-A10L735QB6FZ9N"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A1PFYWMUYBMQ7X">
+                <div class="offender-rank">#8</div>
+                <div class="offender-info">
+                    <div class="driver-name">Daniel Silvadiaz</div>
+                    <div class="driver-id">A1PFYWMUYBMQ7X</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">73s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1PFYWMUYBMQ7X','Daniel Silvadiaz')">
+                        <span class="coach-icon" id="icon-A1PFYWMUYBMQ7X"></span>
+                        <span class="coach-text" id="text-A1PFYWMUYBMQ7X"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1PFYWMUYBMQ7X"></span>
+                </div>
+            </div>
+            <div class="offender-card warning" data-driver-id="A1JU4CO2HXQ61Z">
+                <div class="offender-rank">#9</div>
+                <div class="offender-info">
+                    <div class="driver-name">Ericka Ortiz</div>
+                    <div class="driver-id">A1JU4CO2HXQ61Z</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">56s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-up">&#9650;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1JU4CO2HXQ61Z','Ericka Ortiz')">
+                        <span class="coach-icon" id="icon-A1JU4CO2HXQ61Z"></span>
+                        <span class="coach-text" id="text-A1JU4CO2HXQ61Z"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1JU4CO2HXQ61Z"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A1GTE5P27KWYUW">
+                <div class="offender-rank">#10</div>
+                <div class="offender-info">
+                    <div class="driver-name">Oscar Frias Figueredo</div>
+                    <div class="driver-id">A1GTE5P27KWYUW</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">79s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1GTE5P27KWYUW','Oscar Frias Figueredo')">
+                        <span class="coach-icon" id="icon-A1GTE5P27KWYUW"></span>
+                        <span class="coach-text" id="text-A1GTE5P27KWYUW"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1GTE5P27KWYUW"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A2B756A8IX91K9">
+                <div class="offender-rank">#11</div>
+                <div class="offender-info">
+                    <div class="driver-name">Miguel Valdes Martorell</div>
+                    <div class="driver-id">A2B756A8IX91K9</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">84s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2B756A8IX91K9','Miguel Valdes Martorell')">
+                        <span class="coach-icon" id="icon-A2B756A8IX91K9"></span>
+                        <span class="coach-text" id="text-A2B756A8IX91K9"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2B756A8IX91K9"></span>
+                </div>
+            </div>
+            <div class="offender-card critical" data-driver-id="A2J4QF102ECIQC">
+                <div class="offender-rank">#12</div>
+                <div class="offender-info">
+                    <div class="driver-name">Jeremy Subervi</div>
+                    <div class="driver-id">A2J4QF102ECIQC</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">23s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-flat">&#8212;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2J4QF102ECIQC','Jeremy Subervi')">
+                        <span class="coach-icon" id="icon-A2J4QF102ECIQC"></span>
+                        <span class="coach-text" id="text-A2J4QF102ECIQC"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2J4QF102ECIQC"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A2TX0RIVDO0QF8">
+                <div class="offender-rank">#13</div>
+                <div class="offender-info">
+                    <div class="driver-name">Angie Quiroga sanchez</div>
+                    <div class="driver-id">A2TX0RIVDO0QF8</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">86s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A2TX0RIVDO0QF8','Angie Quiroga sanchez')">
+                        <span class="coach-icon" id="icon-A2TX0RIVDO0QF8"></span>
+                        <span class="coach-text" id="text-A2TX0RIVDO0QF8"></span>
+                    </button>
+                    <span class="coach-date" id="date-A2TX0RIVDO0QF8"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A31BPHW6KPT3B4">
+                <div class="offender-rank">#14</div>
+                <div class="offender-info">
+                    <div class="driver-name">Adderlyn Aguilar Flores</div>
+                    <div class="driver-id">A31BPHW6KPT3B4</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">89s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A31BPHW6KPT3B4','Adderlyn Aguilar Flores')">
+                        <span class="coach-icon" id="icon-A31BPHW6KPT3B4"></span>
+                        <span class="coach-text" id="text-A31BPHW6KPT3B4"></span>
+                    </button>
+                    <span class="coach-date" id="date-A31BPHW6KPT3B4"></span>
+                </div>
+            </div>
+            <div class="offender-card caution" data-driver-id="A1Y4VI7DEHADF3">
+                <div class="offender-rank">#15</div>
+                <div class="offender-info">
+                    <div class="driver-name">Carmen Rodriguez</div>
+                    <div class="driver-id">A1Y4VI7DEHADF3</div>
+                </div>
+                <div class="offender-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Violations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">72s</span>
+                        <span class="stat-label">Avg Time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1d</span>
+                        <span class="stat-label">Days</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value trend-down">&#9660;</span>
+                        <span class="stat-label">7d Trend</span>
+                    </div>
+                </div>
+                <div class="coaching-btn-row">
+                    <button class="coach-btn" onclick="toggleCoaching('A1Y4VI7DEHADF3','Carmen Rodriguez')">
+                        <span class="coach-icon" id="icon-A1Y4VI7DEHADF3"></span>
+                        <span class="coach-text" id="text-A1Y4VI7DEHADF3"></span>
+                    </button>
+                    <span class="coach-date" id="date-A1Y4VI7DEHADF3"></span>
+                </div>
+            </div>
+    </div>
+
+    <!-- SECTION C: Coaching Tracker (collapsible) -->
+    <div class="section">
+        <div class="section-header collapsible-header" onclick="toggleSection('coaching')">
+            <span class="collapse-arrow" id="coaching-arrow">&#9654;</span>
+            <h2>Coaching Tracker</h2>
+            <span class="badge" id="coaching-pending-badge">0</span>
+            <span class="date-label">Last 7 days</span>
+            <button class="reset-btn" onclick="event.stopPropagation(); resetCoaching()">Reset All</button>
+        </div>
+        <div class="collapsible-body" id="coaching-body">
+            <div class="coaching-summary">
+                <div class="coaching-progress">
+                    <div class="coaching-progress-bar">
+                        <div class="coaching-progress-fill" id="coaching-progress-fill" style="width:0%"></div>
+                    </div>
+                    <div class="coaching-progress-text" id="coaching-progress-text">0/0</div>
+                </div>
+                <div class="coaching-filter-row">
+                    <button class="filter-btn active" onclick="filterCoaching('all')">All</button>
+                    <button class="filter-btn" onclick="filterCoaching('pending')">Needs Coaching</button>
+                    <button class="filter-btn" onclick="filterCoaching('coached')">Coached</button>
+                </div>
+                <div id="coaching-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION D: Weekly Total Count -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Weekly Violations</h2>
+        </div>
+        <div class="chart-container">
+            <svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg">
+<text x="40" y="154.0" fill="#8b90a5" font-size="10" text-anchor="end">0</text>
+<line x1="45" y1="150.0" x2="400" y2="150.0" stroke="#2e3345" stroke-width="0.5"/>
+<text x="40" y="122.75" fill="#8b90a5" font-size="10" text-anchor="end">27</text>
+<line x1="45" y1="118.75" x2="400" y2="118.75" stroke="#2e3345" stroke-width="0.5"/>
+<text x="40" y="91.5" fill="#8b90a5" font-size="10" text-anchor="end">55</text>
+<line x1="45" y1="87.5" x2="400" y2="87.5" stroke="#2e3345" stroke-width="0.5"/>
+<text x="40" y="60.25" fill="#8b90a5" font-size="10" text-anchor="end">82</text>
+<line x1="45" y1="56.25" x2="400" y2="56.25" stroke="#2e3345" stroke-width="0.5"/>
+<text x="40" y="29.0" fill="#8b90a5" font-size="10" text-anchor="end">110</text>
+<line x1="45" y1="25.0" x2="400" y2="25.0" stroke="#2e3345" stroke-width="0.5"/>
+<rect x="68.0" y="72.72727272727273" width="60" height="77.27272727272727" rx="4" fill="#fb923c" opacity="0.9"/>
+<text x="98.0" y="166" fill="#8b90a5" font-size="11" text-anchor="middle" font-weight="600">W12</text>
+<text x="98.0" y="178" fill="#6b7090" font-size="8" text-anchor="middle">9.7/day avg</text>
+<text x="98.0" y="188" fill="#6b7090" font-size="8" text-anchor="middle">35 drivers</text>
+<text x="98.0" y="67.72727272727273" fill="#e4e7f1" font-size="12" text-anchor="middle" font-weight="700">68</text>
+<rect x="151.0" y="53.40909090909091" width="60" height="96.5909090909091" rx="4" fill="#fb923c" opacity="0.9"/>
+<text x="181.0" y="166" fill="#8b90a5" font-size="11" text-anchor="middle" font-weight="600">W13</text>
+<text x="181.0" y="178" fill="#6b7090" font-size="8" text-anchor="middle">12.1/day avg</text>
+<text x="181.0" y="188" fill="#6b7090" font-size="8" text-anchor="middle">41 drivers</text>
+<text x="181.0" y="48.40909090909091" fill="#e4e7f1" font-size="12" text-anchor="middle" font-weight="700">85</text>
+<rect x="234.0" y="55.68181818181819" width="60" height="94.31818181818181" rx="4" fill="#fb923c" opacity="0.9"/>
+<text x="264.0" y="166" fill="#8b90a5" font-size="11" text-anchor="middle" font-weight="600">W14</text>
+<text x="264.0" y="178" fill="#6b7090" font-size="8" text-anchor="middle">11.9/day avg</text>
+<text x="264.0" y="188" fill="#6b7090" font-size="8" text-anchor="middle">40 drivers</text>
+<text x="264.0" y="50.68181818181819" fill="#e4e7f1" font-size="12" text-anchor="middle" font-weight="700">83</text>
+<rect x="317.0" y="119.31818181818181" width="60" height="30.68181818181818" rx="4" fill="#34d399" opacity="0.9"/>
+<text x="347.0" y="166" fill="#8b90a5" font-size="11" text-anchor="middle" font-weight="600">W15</text>
+<text x="347.0" y="178" fill="#6b7090" font-size="8" text-anchor="middle">3.9/day avg</text>
+<text x="347.0" y="188" fill="#6b7090" font-size="8" text-anchor="middle">23 drivers</text>
+<text x="347.0" y="114.31818181818181" fill="#e4e7f1" font-size="12" text-anchor="middle" font-weight="700">27</text>
+</svg>
+        </div>
+    </div>
+
+    <div class="footer">
+        Generated April 13, 2026 at 05:07 PM<br>
+        Data: 2026-03-15 to 2026-04-12 &bull; 268 violations &bull; Threshold: 90s<br>
+        DVIC Violations Dashboard v3.0
+    </div>
+
+</div>
+
+<script>
+var DRIVERS = [{"id":"A1NXP6XCL0NIO2","name":"Ulises GuzmanJr","violations":2,"avgDur":55,"lastSeen":"2026-04-12"},{"id":"A2VGKF0M4H3GJ3","name":"Luis Izaguirre","violations":2,"avgDur":11,"lastSeen":"2026-04-08"},{"id":"A2H4UERAXP9BVI","name":"Juan Lainez Barzola","violations":2,"avgDur":69,"lastSeen":"2026-04-12"},{"id":"APW286PEXVS2W","name":"Aristy Saint Surinl","violations":2,"avgDur":50,"lastSeen":"2026-04-12"},{"id":"A192AS8MQS2PJH","name":"Carlos Echenique Rodriguez","violations":1,"avgDur":84,"lastSeen":"2026-04-11"},{"id":"A10VD8NGWNL7QU","name":"Kyle Greenwood","violations":1,"avgDur":10,"lastSeen":"2026-04-08"},{"id":"A10L735QB6FZ9N","name":"Edgar Reina Velepucha","violations":1,"avgDur":65,"lastSeen":"2026-04-12"},{"id":"A1PFYWMUYBMQ7X","name":"Daniel Silvadiaz","violations":1,"avgDur":73,"lastSeen":"2026-04-08"},{"id":"A1JU4CO2HXQ61Z","name":"Ericka Ortiz","violations":1,"avgDur":56,"lastSeen":"2026-04-10"},{"id":"A1GTE5P27KWYUW","name":"Oscar Frias Figueredo","violations":1,"avgDur":79,"lastSeen":"2026-04-06"},{"id":"A2B756A8IX91K9","name":"Miguel Valdes Martorell","violations":1,"avgDur":84,"lastSeen":"2026-04-07"},{"id":"A2J4QF102ECIQC","name":"Jeremy Subervi","violations":1,"avgDur":23,"lastSeen":"2026-04-09"},{"id":"A2TX0RIVDO0QF8","name":"Angie Quiroga sanchez","violations":1,"avgDur":86,"lastSeen":"2026-04-09"},{"id":"A31BPHW6KPT3B4","name":"Adderlyn Aguilar Flores","violations":1,"avgDur":89,"lastSeen":"2026-04-09"},{"id":"A1Y4VI7DEHADF3","name":"Carmen Rodriguez","violations":1,"avgDur":72,"lastSeen":"2026-04-06"},{"id":"A3EO0YFIPC41WD","name":"Fidel Mirandan","violations":1,"avgDur":87,"lastSeen":"2026-04-06"},{"id":"A3GWJLPPCJPEMN","name":"Albert Porrello","violations":1,"avgDur":65,"lastSeen":"2026-04-06"},{"id":"A3PEMM0GS2A66M","name":"Juan Diaz","violations":1,"avgDur":81,"lastSeen":"2026-04-06"},{"id":"A3L7CIVW8USIM","name":"Alexander Hernandez Lara","violations":1,"avgDur":75,"lastSeen":"2026-04-10"},{"id":"AD096COQYQX9K","name":"David Escobar","violations":1,"avgDur":49,"lastSeen":"2026-04-08"},{"id":"AESJ8WSPYFYZA","name":"Frank Lozano Monrroy","violations":1,"avgDur":71,"lastSeen":"2026-04-10"},{"id":"AI7YMV8FG3JW8","name":"Junior Zambrano","violations":1,"avgDur":68,"lastSeen":"2026-04-09"},{"id":"AMBU4Z42OG5DR","name":"Elys Montes","violations":1,"avgDur":62,"lastSeen":"2026-04-08"}];
+var API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+var coachingStore = {};
+var isLoading = false;
+
+// Load coaching data from Google Sheets
+async function loadFromSheets() {
+    try {
+        var resp = await fetch(API_URL + '?action=get');
+        var data = await resp.json();
+        if (data.success && data.records) {
+            coachingStore = data.records;
+        }
+    } catch(e) {
+        console.warn('Could not load from Google Sheets, using local fallback:', e);
+        try { coachingStore = JSON.parse(localStorage.getItem('dvic_coaching_v1')) || {}; }
+        catch(e2) { coachingStore = {}; }
+    }
+}
+
+// Save a single driver to Google Sheets
+async function saveToSheets(id, name, status, dateStr, notes) {
+    try {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'update',
+                transporter_id: id,
+                driver_name: name,
+                status: status,
+                date: dateStr,
+                notes: notes || ''
+            })
+        });
+    } catch(e) {
+        console.warn('Could not save to Google Sheets:', e);
+    }
+    // Also save locally as backup
+    try { localStorage.setItem('dvic_coaching_v1', JSON.stringify(coachingStore)); }
+    catch(e) {}
+}
+
+async function toggleCoaching(id, name) {
+    if (isLoading) return;
+    isLoading = true;
+
+    var rec = coachingStore[id];
+    if (!rec || rec.status !== 'coached') {
+        var note = prompt('Coaching note for ' + name + ' (optional):', '');
+        var dateStr = new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+        coachingStore[id] = {
+            name: name,
+            status: 'coached',
+            date: dateStr,
+            notes: note || ''
+        };
+        await saveToSheets(id, name, 'coached', dateStr, note || '');
+    } else {
+        if (confirm('Reset ' + name + ' back to Needs Coaching?')) {
+            coachingStore[id] = { name: name, status: 'pending', date: '', notes: '' };
+            await saveToSheets(id, name, 'pending', '', '');
+        }
+    }
+
+    isLoading = false;
+    refreshAll();
+}
+
+function refreshAll() {
+    var s = coachingStore;
+    DRIVERS.forEach(function(d) {
+        var rec = s[d.id];
+        var isCoached = rec && rec.status === 'coached';
+
+        document.querySelectorAll('[id="icon-' + d.id + '"]').forEach(function(el) {
+            el.textContent = isCoached ? '\u2713' : '\u25CB';
+        });
+        document.querySelectorAll('[id="text-' + d.id + '"]').forEach(function(el) {
+            el.textContent = isCoached ? 'Coached' : 'Needs Coaching';
+        });
+        document.querySelectorAll('[id="date-' + d.id + '"]').forEach(function(el) {
+            if (isCoached) {
+                el.textContent = (rec.date || '') + (rec.notes ? ' \u2014 ' + rec.notes : '');
+            } else {
+                el.textContent = '';
+            }
+        });
+
+        // Update button styling
+        document.querySelectorAll('.coach-btn').forEach(function(b) {
+            var btnId = b.getAttribute('onclick');
+            if (btnId && btnId.indexOf(d.id) !== -1) {
+                b.className = 'coach-btn ' + (isCoached ? 'coached' : 'pending');
+            }
+        });
+    });
+    renderCoachingList();
+}
+
+function renderCoachingList() {
+    var s = coachingStore;
+    var list = document.getElementById('coaching-list');
+    var total = DRIVERS.length;
+    var coached = 0;
+    var html = '';
+
+    DRIVERS.forEach(function(d) {
+        var rec = s[d.id];
+        var isCoached = rec && rec.status === 'coached';
+        if (isCoached) coached++;
+
+        var statusClass = isCoached ? 'coached' : '';
+        var btnLabel = isCoached ? '\u2713 Coached' : 'Coach';
+        var meta = '';
+        if (isCoached && rec.date) {
+            meta = rec.date;
+            if (rec.notes) meta += ' \u2014 ' + rec.notes;
+        }
+
+        html += '<div class="coaching-driver-row" data-status="' + (isCoached ? 'coached' : 'pending') + '">' +
+            '<div class="coaching-driver-info">' +
+                '<div class="driver-name">' + d.name + '</div>' +
+                '<div class="driver-id">' + d.id + '</div>' +
+                (meta ? '<div class="coach-meta">' + meta + '</div>' : '') +
+            '</div>' +
+            '<div class="coaching-driver-viol">' +
+                '<div class="stat-value">' + d.violations + '</div>' +
+                '<div class="stat-label">7d</div>' +
+            '</div>' +
+            '<button class="coaching-mini-btn ' + statusClass + '" data-coach-id="' + d.id + '" data-coach-name="' + d.name.replace(/"/g,'&quot;') + '">' + btnLabel + '</button>' +
+        '</div>';
+    });
+
+    list.innerHTML = html;
+
+    var pending = total - coached;
+    document.getElementById('coaching-pending-badge').textContent = pending;
+    document.getElementById('coaching-progress-text').textContent = coached + '/' + total;
+    var pct = total > 0 ? (coached / total * 100) : 0;
+    document.getElementById('coaching-progress-fill').style.width = pct + '%';
+
+    applyFilter();
+}
+
+var currentFilter = 'all';
+function filterCoaching(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    applyFilter();
+}
+function applyFilter() {
+    document.querySelectorAll('.coaching-driver-row').forEach(function(row) {
+        if (currentFilter === 'all') { row.style.display = ''; }
+        else { row.style.display = row.dataset.status === currentFilter ? '' : 'none'; }
+    });
+}
+
+// Collapse/expand sections
+function toggleSection(id) {
+    var body = document.getElementById(id + '-body');
+    var arrow = document.getElementById(id + '-arrow');
+    if (body.classList.contains('open')) {
+        body.classList.remove('open');
+        arrow.classList.remove('open');
+    } else {
+        body.classList.add('open');
+        arrow.classList.add('open');
+    }
+}
+
+// Reset all coaching data
+async function resetCoaching() {
+    if (confirm('Reset ALL coaching records? This cannot be undone.')) {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'reset' })
+            });
+        } catch(e) { console.warn('Reset failed on Sheets:', e); }
+        coachingStore = {};
+        try { localStorage.removeItem('dvic_coaching_v1'); } catch(e) {}
+        refreshAll();
+    }
+}
+
+// Event delegation for coaching list buttons
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-coach-id]');
+    if (btn) {
+        toggleCoaching(btn.dataset.coachId, btn.dataset.coachName);
+    }
+});
+
+// Init: load from Google Sheets, then render
+(async function() {
+    await loadFromSheets();
+    refreshAll();
+})();
+</script>
+</body>
+</html>
